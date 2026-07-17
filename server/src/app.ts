@@ -15,6 +15,7 @@ interface CreateAppOptions {
   environment?: 'development' | 'test' | 'production';
   authService?: AuthService;
   adminStore?: AdminStore;
+  staticDirectory?: string;
 }
 
 interface RateLimitBucket {
@@ -91,6 +92,7 @@ export function createApp({
   environment = 'development',
   authService,
   adminStore,
+  staticDirectory,
 }: CreateAppOptions): express.Express {
   const app = express();
   const allowedOrigins = new Set(corsOrigins);
@@ -278,6 +280,17 @@ export function createApp({
         response.json({ data: { module: result.status === 'ok' ? result.module : null } });
       });
     }
+  }
+
+  if (staticDirectory) {
+    app.use(express.static(staticDirectory, { index: 'index.html' }));
+    app.use((request, response, next) => {
+      if (request.method === 'GET' && request.accepts('html')) {
+        response.sendFile('index.html', { root: staticDirectory });
+        return;
+      }
+      next();
+    });
   }
 
   app.use((_request, response) => {

@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: virtual-classroom
+    runtime: node
+    region: singapore
+    plan: free
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: npm ci --include=dev && npm run build && npm run db:migrate
+    startCommand: npm run start:api
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_BASE_PATH
+        value: /
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: false
+      - key: DATABASE_POOL_MAX
+        value: 10
+      - key: AUTH_OTP_PEPPER
+        generateValue: true
+      - key: SESSION_TTL_DAYS
+        value: 7
+      - key: OTP_TTL_MINUTES
+        value: 10
+      - key: EMAIL_MODE
+        value: smtp
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false

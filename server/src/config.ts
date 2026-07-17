@@ -7,7 +7,8 @@ const booleanFromEnvironment = z
 
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
+  API_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  PORT: z.coerce.number().int().min(1).max(65535).optional(),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DATABASE_SSL: booleanFromEnvironment,
   DATABASE_SSL_REJECT_UNAUTHORIZED: z
@@ -28,6 +29,7 @@ const environmentSchema = z.object({
   CORS_ORIGINS: z.string().default(
     'http://127.0.0.1:4173,http://localhost:4173,http://127.0.0.1:5173,http://localhost:5173',
   ),
+  RENDER_EXTERNAL_URL: z.url().optional(),
 });
 
 export interface ApiConfig {
@@ -60,14 +62,18 @@ export function readConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
   if (parsed.EMAIL_MODE === 'smtp' && (!parsed.SMTP_HOST || !parsed.SMTP_USER || !parsed.SMTP_PASSWORD || !parsed.SMTP_FROM)) {
     throw new Error('SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM are required in SMTP mode.');
   }
+  const corsOrigins = parsed.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean);
+  if (parsed.RENDER_EXTERNAL_URL && !corsOrigins.includes(parsed.RENDER_EXTERNAL_URL)) {
+    corsOrigins.push(parsed.RENDER_EXTERNAL_URL);
+  }
   return {
     nodeEnvironment: parsed.NODE_ENV,
-    port: parsed.API_PORT,
+    port: parsed.API_PORT ?? parsed.PORT ?? 8787,
     databaseUrl: parsed.DATABASE_URL,
     databaseSsl: parsed.DATABASE_SSL,
     databaseSslRejectUnauthorized: parsed.DATABASE_SSL_REJECT_UNAUTHORIZED,
     databasePoolMax: parsed.DATABASE_POOL_MAX,
-    corsOrigins: parsed.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean),
+    corsOrigins,
     authOtpPepper: parsed.AUTH_OTP_PEPPER,
     sessionTtlDays: parsed.SESSION_TTL_DAYS,
     otpTtlMinutes: parsed.OTP_TTL_MINUTES,

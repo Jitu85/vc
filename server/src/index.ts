@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { AuthService } from './auth-service.js';
 import { readConfig } from './config.js';
@@ -25,6 +26,7 @@ const app = createApp({
   environment: config.nodeEnvironment,
   authService,
   adminStore: store,
+  staticDirectory: fileURLToPath(new URL('../../dist/', import.meta.url)),
 });
 
 const server = app.listen(config.port, '0.0.0.0', () => {
